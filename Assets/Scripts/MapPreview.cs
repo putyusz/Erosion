@@ -23,7 +23,6 @@ public class MapPreview : MonoBehaviour
     public MeshSettings meshSettings;
     public HeightMapSettings heightMapSettings;
     public TextureSettings textureData;
-    public BiomeSettings biomeSettings;
 
     public Material terrainMaterial;
 
@@ -37,8 +36,6 @@ public class MapPreview : MonoBehaviour
         textureData.UpdateMeshHeights(terrainMaterial, heightMapSettings.MinHeight, heightMapSettings.MaxHeight);
 
         HeightMap heightMap = HeightMapGenerator.GenerateHeightMap(meshSettings.NumVerticesPerLine, meshSettings.NumVerticesPerLine, heightMapSettings, Vector2.zero);
-        BiomeMap biomeMap = BiomeMapGenerator.GenerateBiomes(meshSettings.NumVerticesPerLine, meshSettings.NumVerticesPerLine, heightMap, biomeSettings, Vector2.zero);
-        float[,] moistureMap = BiomeMapGenerator.GenerateMoistureMap(meshSettings.NumVerticesPerLine, meshSettings.NumVerticesPerLine, heightMap, biomeSettings.moistureSettings, Vector2.zero);
 
         switch (drawMode) {
             case DrawMode.NoiseMap:
@@ -46,13 +43,7 @@ public class MapPreview : MonoBehaviour
                 break;
             case DrawMode.Mesh:
                 DrawMesh(MeshGenerator.GenerateTerrainMesh(heightMap.values, meshSettings, editorPreviewLOD));
-                break;
-            case DrawMode.Moisture:
-                DrawTexture(TextureGenerator.TextureFromMoistureMap(moistureMap, biomeSettings.moistureSettings));
-                break;
-            case DrawMode.Biomes:
-                DrawTexture(TextureGenerator.TextureFromBiomeMap(biomeMap.biomes));
-                break;
+                break;           
             default:
                 break;
         }
@@ -100,10 +91,6 @@ public class MapPreview : MonoBehaviour
         if (textureData != null) {
             textureData.OnValuesUpdated -= OnTextureValuesUpdated;
             textureData.OnValuesUpdated += OnTextureValuesUpdated;
-        }
-        if (biomeSettings != null) {
-            biomeSettings.OnValuesUpdated -= OnValuesUpdated;
-            biomeSettings.OnValuesUpdated += OnValuesUpdated;
         }
     }
 }

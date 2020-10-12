@@ -16,46 +16,16 @@ MonoBehaviour:
   noiseSettings:
   - enabled: 1
     useContinentAsMask: 0
-    type: 0
-    scale: 1000
-    octaves: 4
-    persistance: 0.5
-    lacunarity: 2
-    seed: 125
-    offset: {x: 0, y: 0}
-    minValue: 0.5
-  - enabled: 1
-    useContinentAsMask: 0
     type: 1
-    scale: 200
-    octaves: 6
-    persistance: 0.5
+    scale: 100
+    octaves: 7
+    persistance: 0.4
     lacunarity: 2
     seed: 125
-    offset: {x: 0, y: 0}
-    minValue: 0.4
-  - enabled: 1
-    useContinentAsMask: 0
-    type: 1
-    scale: 10000
-    octaves: 6
-    persistance: 0.5
-    lacunarity: 2
-    seed: 125
-    offset: {x: 0, y: 0}
+    offset: {x: -22.98, y: 0}
     minValue: 0
-  - enabled: 1
-    useContinentAsMask: 0
-    type: 2
-    scale: 400
-    octaves: 4
-    persistance: 0.5
-    lacunarity: 2
-    seed: 125
-    offset: {x: 0, y: 0}
-    minValue: 0.2
   useFalloff: 0
-  heightMultiplier: 250
+  heightMultiplier: 100
   heightCurve:
     serializedVersion: 2
     m_Curve:

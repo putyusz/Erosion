@@ -22,19 +22,19 @@ MonoBehaviour:
     textureScale: 10
   - texture: {fileID: 2800000, guid: 1aaaf893db0be3f4e9ac9e56cd061d5e, type: 3}
     tint: {r: 0.14026764, g: 0.5, b: 0.03066039, a: 0}
+    tintStrength: 1
+    startHeight: 0.085
+    blendStrength: 0.01
+    textureScale: 10
+  - texture: {fileID: 2800000, guid: 1aaaf893db0be3f4e9ac9e56cd061d5e, type: 3}
+    tint: {r: 0.14026764, g: 0.5, b: 0.03066039, a: 0}
     tintStrength: 0
     startHeight: 0.085
     blendStrength: 0.01
     textureScale: 10
-  - texture: {fileID: 2800000, guid: 668ffd9599b50bc47bc6df0c3ae3478a, type: 3}
-    tint: {r: 1, g: 1, b: 1, a: 0}
-    tintStrength: 0
-    startHeight: 1
-    blendStrength: 0.1
-    textureScale: 20
   - texture: {fileID: 2800000, guid: 506b13bbcad6caf45941b8e7ca61ed75, type: 3}
     tint: {r: 0.3584906, g: 0.23286948, b: 0.1775543, a: 0}
-    tintStrength: 0
+    tintStrength: 0.9
     startHeight: 0.25
-    blendStrength: 0.05
+    blendStrength: 0.093
     textureScale: 40

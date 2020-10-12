@@ -6,9 +6,7 @@ using UnityEngine;
 public static class HeightMapGenerator {
 
     public static HeightMap GenerateHeightMap(int width, int height, HeightMapSettings settings, Vector2 sampleCentre) {
-        //float[,] values = Noise.GenerateNoiseMap(width, height, settings.noiseSettings, sampleCentre);
         float[,] values = Noise.GenerateNoiseMap2(width, settings.noiseSettings, sampleCentre);
-        //float[,] falloff = FalloffGenerator.GenerateFalloffMap(width);
 
         //AnimationCurve heightCurve_threadSafe = new AnimationCurve(settings.heightCurve.keys);
 
@@ -18,9 +16,6 @@ public static class HeightMapGenerator {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
                 values[i, j] *= /*heightCurve_threadSafe.Evaluate(values[i, j]) **/ settings.heightMultiplier;
-                //if (settings.useFalloff) {
-                //    values[i, j] *= falloff[i, j];
-                //}                
                 if (values[i, j] > maxValue) {
                     maxValue = values[i, j];
                 }
@@ -44,7 +39,7 @@ public static class HeightMapGenerator {
 }
 
 public struct HeightMap {
-    public readonly float[,] values;
+    public float[,] values;
     public readonly float minValue;
     public readonly float maxValue;
 

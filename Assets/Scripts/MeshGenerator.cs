@@ -70,7 +70,7 @@ public static class MeshGenerator {
         meshData.BakeNormals();
 
         return meshData;
-    }
+    }    
 }
 
 public class MeshData

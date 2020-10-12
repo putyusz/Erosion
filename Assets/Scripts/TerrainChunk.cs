@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using UnityEngine;
 
 public class TerrainChunk {
@@ -16,40 +17,30 @@ public class TerrainChunk {
     MeshFilter meshFilter;
     MeshCollider meshCollider;
 
-    GameObject cloudObject;
-
-    private List<GameObject> plants;
-
-    MeshRenderer cloudRenderer;
-    MeshFilter cloudFilter;
-
     LODInfo[] detailLevels;
     LODMesh[] lodMeshes;
     readonly int colliderLODIndex;
 
     HeightMap heightMap;
-    BiomeMap biomeMap;
 
     bool mapReceived;
-    bool firstGeneration = true;
     int previousLODIndex = -1;
     bool hasSetCollider;
     readonly float maxViewDistance;
 
     readonly HeightMapSettings heightMapSettings;
-    readonly BiomeSettings biomeSettings;
     MeshSettings meshSettings;
     Transform viewer;
 
-    public TerrainChunk(Vector2 coord, HeightMapSettings heightMapSettings, BiomeSettings biomeSettings, MeshSettings meshSettings, LODInfo[] detailLevels, int colliderLODIndex, Transform parent, Transform viewer, Material mapMaterial, Material cloudMaterial, Mesh cloudMesh) {
+    private Erosion erosion = new Erosion();
+
+    public TerrainChunk(Vector2 coord, HeightMapSettings heightMapSettings, MeshSettings meshSettings, LODInfo[] detailLevels, int colliderLODIndex, Transform parent, Transform viewer, Material mapMaterial) {
         this.coord = coord;
         this.detailLevels = detailLevels;
         this.colliderLODIndex = colliderLODIndex;
         this.heightMapSettings = heightMapSettings;
-        this.biomeSettings = biomeSettings;
         this.meshSettings = meshSettings;
         this.viewer = viewer;
-        plants = new List<GameObject>();
 
         sampleCentre = coord * meshSettings.MeshWorldSize / meshSettings.meshScale;
         Vector2 position = coord * meshSettings.MeshWorldSize;
@@ -64,17 +55,6 @@ public class TerrainChunk {
 
         meshObject.transform.position = new Vector3(position.x, 0, position.y);
         meshObject.transform.parent = parent;
-
-        //----cloud----
-        cloudObject = new GameObject("Cloud");
-        cloudRenderer = cloudObject.AddComponent<MeshRenderer>();
-        cloudFilter = cloudObject.AddComponent<MeshFilter>();
-        cloudRenderer.sharedMaterial = cloudMaterial;
-        cloudFilter.mesh = cloudMesh;
-
-        cloudObject.transform.position = new Vector3(position.x, 300, position.y);
-        cloudObject.transform.rotation = Quaternion.AngleAxis(180, new Vector3(1.0f, 0.0f, 0.0f));
-        cloudObject.transform.parent = parent;
 
         SetVisible(false);
 
@@ -91,14 +71,48 @@ public class TerrainChunk {
 
     }
 
-    public void Load() {
-        ThreadedDataRequester.RequestData(() => CombinedMapGenerator.GenerateCombinedMap(meshSettings.NumVerticesPerLine, meshSettings.NumVerticesPerLine, heightMapSettings, biomeSettings, sampleCentre), OnCombinedMapReceived);
+    private static float[] MatrixToList(float[,] matrix) {
+        int size = matrix.GetLength(0);
+        float[] list = new float[size * size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                list[j + i * size] = matrix[i, j];
+            }
+        }
+
+        return list;
     }
 
-    public void OnCombinedMapReceived(object combinedMapObject) {
-        CombinedMap map = (CombinedMap)combinedMapObject;
-        heightMap = map.heightMap;
-        biomeMap = map.biomeMap;
+    private static float[,] ListToMatrix(float[] list) {
+        int size = (int)Mathf.Sqrt(list.Length);
+        float[,] matrix = new float[size, size];
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                matrix[i, j] = list[j + i * size];
+            }
+        }
+
+        return matrix;
+    }
+
+    public void Load() {
+        ThreadedDataRequester.RequestData(() => HeightMapGenerator.GenerateHeightMap(meshSettings.NumVerticesPerLine, meshSettings.NumVerticesPerLine, heightMapSettings, sampleCentre), OnHeightMapReceived);
+    }
+
+    public void OnHeightMapReceived(object heightMapObject) {
+        heightMap = (HeightMap)heightMapObject;
+        var input = MatrixToList(heightMap.values);
+        Stopwatch st = new Stopwatch();
+        st.Start();
+        var output = erosion.Erode(input, heightMap.values.GetLength(0), 70000);
+        st.Stop();
+        using (System.IO.StreamWriter file =
+            new System.IO.StreamWriter(@"C:\Users\patyu\Desktop\test.txt", true)) {
+            file.WriteLine(st.Elapsed);
+        }
+        heightMap.values = ListToMatrix(output);
         mapReceived = true;
         UpdateTerrainChunk();
     }
@@ -106,25 +120,6 @@ public class TerrainChunk {
     Vector2 ViewerPosition {
         get {
             return new Vector2(viewer.position.x, viewer.position.z);
-        }
-    }
-
-    System.Random rnd = new System.Random();
-
-    private void PlantTrees(HeightMap heightMap, BiomeMap biomeMap) {
-        int length = heightMap.values.GetLength(0);
-        for (int y = 0; y < length; y++) {
-            for (int x = 0; x < length; x++) {
-                if (rnd.Next(0, 5000) < biomeMap.biomes[x, y].GetVegetationFrequency()) {
-                    Vector3 plantPos = new Vector3(x - length / 2.0f + sampleCentre.x, heightMap.values[x, y], -y + length / 2.0f + sampleCentre.y);
-                    //PoolManager.Instance.ReuseObject(biomeMap.biomes[x, y].GetRandomPlant(), treePos);
-                    //var plant = PoolManager.Instance.RequestObject(biomeMap.biomes[x, y].GetRandomPlant(), treePos);
-                    var plant = PoolManager.Instance.GetObject(biomeMap.biomes[x, y].GetRandomPlant(), plantPos);
-                    if (plant != null) {
-                        plants.Add(plant);
-                    }
-                }
-            }
         }
     }
 
@@ -154,17 +149,11 @@ public class TerrainChunk {
                         lodMesh.RequestMesh(heightMap.values, meshSettings);
                     }
                 }
-                if (firstGeneration) {
-                    PlantTrees(heightMap, biomeMap);
-                    firstGeneration = false;
-                }
             }
 
             if (wasVisible != visible) {
                 SetVisible(visible);
-                if (OnVisibilityChanged != null) {
-                    OnVisibilityChanged(this, visible);
-                }
+                OnVisibilityChanged?.Invoke(this, visible);
             }
         }
     }
@@ -189,13 +178,7 @@ public class TerrainChunk {
     }
 
     public void SetVisible(bool visible) {
-        meshObject.SetActive(visible);
-        cloudObject.SetActive(visible);
-        if (!visible) {
-            foreach (var plant in plants) {
-                plant.SetActive(false);
-            }
-        }
+        meshObject.SetActive(visible); 
     }
 
     public bool IsVisible() {
